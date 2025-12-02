@@ -1,0 +1,5 @@
+{
+  "name": "Neon Tetris Duel",
+  "description": "A high-performance, responsive 1-player or 2-player Tetris game. Features fast-drop scoring mechanics, local leaderboards, and a modern neon aesthetic.",
+  "requestFramePermissions": []
+}
