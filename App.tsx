@@ -39,7 +39,7 @@ const App: React.FC = () => {
   });
 
   // Start Game
-  const startGame = (selectedMode: '1P' | '2P') => {
+  const startGame = useCallback((selectedMode: '1P' | '2P') => {
     setMode(selectedMode);
     game1.reset();
     game2.reset();
@@ -47,7 +47,22 @@ const App: React.FC = () => {
     setWinner(null);
     setAiComment(null);
     setIsPlaying(true);
-  };
+  }, [game1, game2]); // game1.reset and game2.reset are stable or we depend on the object
+
+  // Global Reset Hotkey (Alt + R)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.code === 'KeyR')) {
+        e.preventDefault();
+        if (mode !== 'MENU') {
+           startGame(mode);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [mode, startGame]);
 
   // Check Game Over Conditions
   useEffect(() => {
@@ -59,12 +74,9 @@ const App: React.FC = () => {
         handleEndGame('Player 1', game1.score, '1P', game1.lines);
       }
     } else if (mode === '2P') {
-        // In 2P, if one dies, the other wins immediately, or play until both die?
-        // Standard competitive: First to die loses.
         if (game1.gameOver && !game2.gameOver) {
             setIsPlaying(false);
             setWinner("Player 2 Wins!");
-            // Both get saved? Usually just high scores.
             handleEndGame('Player 1', game1.score, '2P', game1.lines, false); // Loser
             handleEndGame('Player 2', game2.score, '2P', game2.lines, true); // Winner
         } else if (game2.gameOver && !game1.gameOver) {
@@ -73,7 +85,6 @@ const App: React.FC = () => {
             handleEndGame('Player 2', game2.score, '2P', game2.lines, false);
             handleEndGame('Player 1', game1.score, '1P', game1.lines, true);
         } else if (game1.gameOver && game2.gameOver) {
-            // Draw or simultaneous death
             setIsPlaying(false);
             setWinner(game1.score > game2.score ? "Player 1 Wins (Score)!" : "Player 2 Wins (Score)!");
             handleEndGame('Player 1', game1.score, '2P', game1.lines);
@@ -83,17 +94,18 @@ const App: React.FC = () => {
   }, [isPlaying, mode, game1.gameOver, game2.gameOver, game1.score, game2.score, game1.lines, game2.lines]);
 
   const handleEndGame = async (name: string, score: number, gameMode: '1P'|'2P', lines: number, isWinner: boolean = true) => {
-     // Small delay to ensure prompt shows up nicely
      setTimeout(async () => {
          const playerName = isWinner ? prompt(`Game Over! Enter name for ${name} (Score: ${score}):`, name) : null;
          
          if (playerName) {
              saveScore(playerName, score, gameMode);
              setRefreshScores(prev => prev + 1);
+             // Scroll to leaderboard
+             setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+             }, 300);
          }
 
-         // Fetch AI comment only for the "Main" player or Winner in 1P mode
-         // Now using local service, so no API key check needed
          if (gameMode === '1P') {
              const comment = await getGameSummary(score, lines, gameMode);
              setAiComment(comment);
@@ -107,7 +119,7 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="w-full max-w-4xl flex justify-between items-end mb-8 border-b border-slate-700 pb-4">
         <div>
-           <h1 className="text-3xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 drop-shadow-lg">
+           <h1 className="text-2xl md:text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 drop-shadow-lg">
             NEON TETRIS
           </h1>
           <p className="text-slate-400 text-sm mt-1 tracking-wider">
@@ -116,17 +128,20 @@ const App: React.FC = () => {
         </div>
         
         {mode !== 'MENU' && (
-          <button 
-            onClick={() => { setIsPlaying(false); setMode('MENU'); }}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold transition"
-          >
-            QUIT GAME
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <span className="text-xs text-slate-500 font-mono">Press 'Alt + R' to Restart</span>
+            <button 
+              onClick={() => { setIsPlaying(false); setMode('MENU'); }}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold transition"
+            >
+              QUIT GAME
+            </button>
+          </div>
         )}
       </header>
 
       {/* Main Content */}
-      <main className="w-full max-w-5xl flex flex-col items-center">
+      <main className="w-full max-w-6xl flex flex-col items-center">
         
         {/* Menu Screen */}
         {mode === 'MENU' && (
@@ -238,14 +253,22 @@ const App: React.FC = () => {
               )}
             </div>
             
-            {/* Controls Helper */}
-             <div className="grid grid-cols-2 gap-8 text-xs text-slate-500 mt-4">
-                <div>
-                    <span className="font-bold text-cyan-500">P1 Controls:</span> WASD to Move/Rotate, Space to Hard Drop
+            {/* Controls Helper - INCREASED FONT SIZE */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-lg text-slate-400 mt-8 max-w-4xl w-full">
+                <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                    <p className="font-bold text-cyan-400 mb-2">P1 Controls</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li><span className="text-white font-mono">W, A, S, D</span> to Move/Rotate</li>
+                      <li><span className="text-white font-mono">Space</span> to Hard Drop</li>
+                    </ul>
                 </div>
                 {mode === '2P' && (
-                    <div>
-                        <span className="font-bold text-purple-500">P2 Controls:</span> Arrows to Move/Rotate, Enter to Hard Drop
+                    <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                        <p className="font-bold text-purple-400 mb-2">P2 Controls</p>
+                         <ul className="list-disc pl-5 space-y-1">
+                          <li><span className="text-white font-mono">Arrow Keys</span> to Move/Rotate</li>
+                          <li><span className="text-white font-mono">Enter</span> to Hard Drop</li>
+                        </ul>
                     </div>
                 )}
             </div>

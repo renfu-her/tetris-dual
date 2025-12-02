@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Grid, Tetromino, TetrominoType } from '../types';
 import { BOARD_HEIGHT, BOARD_WIDTH, COLORS } from '../constants';
@@ -42,8 +43,8 @@ const TetrisBoard: React.FC<TetrisBoardProps> = ({ grid, activePiece, playerId, 
         style={{
           gridTemplateColumns: `repeat(${BOARD_WIDTH}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${BOARD_HEIGHT}, minmax(0, 1fr))`,
-          width: '250px',
-          height: '500px',
+          width: '300px', // Increased from 250px
+          height: '600px', // Increased from 500px
         }}
       >
         {renderGrid.map((row, y) =>
