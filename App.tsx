@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTetris } from './hooks/useTetris';
 import TetrisBoard from './components/TetrisBoard';
@@ -92,7 +93,8 @@ const App: React.FC = () => {
          }
 
          // Fetch AI comment only for the "Main" player or Winner in 1P mode
-         if (gameMode === '1P' && process.env.API_KEY) {
+         // Now using local service, so no API key check needed
+         if (gameMode === '1P') {
              const comment = await getGameSummary(score, lines, gameMode);
              setAiComment(comment);
          }
@@ -105,7 +107,7 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="w-full max-w-4xl flex justify-between items-end mb-8 border-b border-slate-700 pb-4">
         <div>
-           <h1 className="text-4xl md:text-6xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 drop-shadow-lg">
+           <h1 className="text-3xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 drop-shadow-lg">
             NEON TETRIS
           </h1>
           <p className="text-slate-400 text-sm mt-1 tracking-wider">

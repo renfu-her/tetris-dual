@@ -1,37 +1,45 @@
-import { GoogleGenAI } from "@google/genai";
 
-// Initialize AI only if key exists to avoid crash, but handle safely in calls
-const apiKey = process.env.API_KEY || '';
-let ai: GoogleGenAI | null = null;
+// Simulating AI behavior locally to remove API Key dependency
 
-if (apiKey) {
-    ai = new GoogleGenAI({ apiKey });
-}
+const LOW_SCORE_COMMENTS = [
+  "Gravity check: Passed. Survival check: Failed.",
+  "Just warming up the fingers, right?",
+  "A little rocky, but I see potential!",
+  "The blocks were just falling too fast.",
+  "Oof! That tower got high quickly.",
+  "Tactical reset? I like it.",
+];
+
+const MEDIUM_SCORE_COMMENTS = [
+  "Solid performance! Keep stacking.",
+  "Not bad! You're getting into the flow.",
+  "Clean lines, decent speed. Good game.",
+  "Respectable score! The rhythm is there.",
+  "Nice hustle! aiming for a new high score?",
+];
+
+const HIGH_SCORE_COMMENTS = [
+  "ABSOLUTELY GODLIKE!",
+  "Are you a machine? Incredible speed!",
+  "Tetris Master class in session!",
+  "The blocks obey your command!",
+  "Galaxy brain plays right there.",
+  "New dimension reached! Amazing!",
+];
 
 export const getGameSummary = async (score: number, lines: number, mode: string): Promise<string> => {
-  if (!ai) return "Great game! (AI functionality unavailable without API Key)";
+  // Simulate a short "thinking" delay
+  await new Promise(resolve => setTimeout(resolve, 600));
 
-  try {
-    const model = 'gemini-2.5-flash';
-    const prompt = `
-      You are a high-energy esports commentator for a Tetris game.
-      The player just finished a game in ${mode} mode.
-      Score: ${score}.
-      Lines Cleared: ${lines}.
-      
-      Give a very short (max 15 words), witty, or encouraging comment about their performance.
-      If the score is low (<1000), be gently roasting but encouraging.
-      If high (>5000), be amazed.
-    `;
+  let pool = MEDIUM_SCORE_COMMENTS;
 
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-    });
-
-    return response.text || "Game Over!";
-  } catch (error) {
-    console.error("Error fetching AI summary:", error);
-    return "Game Over!";
+  if (score < 1000) {
+    pool = LOW_SCORE_COMMENTS;
+  } else if (score > 5000) {
+    pool = HIGH_SCORE_COMMENTS;
   }
+
+  // Pick a random comment
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex];
 };
